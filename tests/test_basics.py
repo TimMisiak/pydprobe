@@ -1,4 +1,4 @@
-from pydprobe import instrument
+import pydprobe
 
 def baz(a, b):
     print(f"baz({a}, {b})")
@@ -19,8 +19,8 @@ def trace_callback(func_name: str, args: dict):
 def test_instrumentation():
     global trace_list
     trace_list = []
-    instrument.set_trace_callback(trace_callback)
-    instrument.add_trace("tests.test_basics", "bar")
-    instrument.add_trace("tests.test_basics", "baz")
+    pydprobe.set_trace_callback(trace_callback)
+    pydprobe.add_trace("tests.test_basics", "bar")
+    pydprobe.add_trace("tests.test_basics", "baz")
     bar(1, 2, n2="val")
     assert trace_list == ["OUTPUT: bar(a = 1, b = 2, n1 = 'asdf', n2 = 'val')", 'OUTPUT: baz(a = 2, b = 1)']
