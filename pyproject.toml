@@ -9,6 +9,8 @@ readme = "README.md"
 python = ">3.8"
 pytest = "^8.1.1"
 
+[tool.poetry.group.dev.dependencies]
+pytest-asyncio = "^0.23.5"
 
 [build-system]
 requires = ["poetry-core"]

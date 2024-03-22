@@ -3,6 +3,7 @@ from typing import Callable
 import types
 import sys
 import platform
+from . import threads
 
 
 def default_trace_callback(func_name: str, args: dict):
@@ -58,12 +59,16 @@ def add_trace(module_name, func_name):
     if pyver > (3, 12, 1):
         raise Exception("Current python version is untested. Highest tested is 3.12.1")
 
-    #module = importlib.import_module(module_name)
     if sys.modules["__main__"].__spec__.name == module_name:
         module = sys.modules["__main__"]
     else:
         module = sys.modules[module_name]
     func = getattr(module, func_name)
+
+    if threads.is_func_active(func):
+        raise Exception("Can't instrument an active function")
+
+
     setattr(module, "__instrument_pre_call", __instrument_pre_call)
     orig = func.__code__
 
