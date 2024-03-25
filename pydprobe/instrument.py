@@ -3,7 +3,7 @@ from typing import Callable, Any
 import types
 import sys
 import platform
-from . import threads
+from . import threads, modules
 import threading
 import time
 
@@ -56,10 +56,7 @@ def preamble():
 active_traces = dict()
 
 def _get_func(module_name, func_name):
-    if sys.modules["__main__"].__spec__.name == module_name:
-        module = sys.modules["__main__"]
-    else:
-        module = sys.modules[module_name]
+    module = modules.get_module_by_name(module_name)
     func = getattr(module, func_name)
     return func
 
