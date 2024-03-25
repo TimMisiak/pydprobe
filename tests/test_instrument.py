@@ -73,10 +73,7 @@ async def test_async():
     task = asyncio.create_task(async_sleep_func())
     await asyncio.sleep(.2)
     pydprobe.set_trace_callback(trace_callback)
-    pydprobe.add_trace("tests.test_instrument", "async_sleep_func")
-    task2 = asyncio.create_task(async_sleep_func())
-    ret = await task
-    assert ret == 2
-    await task2
-    assert trace_list == ['OUTPUT: async_sleep_func()']
+    with pytest.raises(Exception):
+        pydprobe.add_trace("tests.test_instrument", "async_sleep_func")
+    await task
     pydprobe.remove_all_traces()

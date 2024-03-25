@@ -3,7 +3,7 @@ from typing import Callable, Any
 import types
 import sys
 import platform
-from . import threads, modules
+from . import threads, modules, tasks
 import threading
 import time
 
@@ -75,11 +75,14 @@ def _remove_trace_deferred(func):
     while not remove_trace_func(func):
         time.sleep(0.1)
 
+def _is_func_active(func):
+    return threads.is_func_active(func) or tasks.is_func_active(func)
+
 def remove_trace_func(func):
     global active_traces
     if func not in active_traces:
         return False
-    if not threads.is_func_active(func):
+    if not _is_func_active(func):
         orig_code = active_traces[func]
         func.__code__ = orig_code
         del active_traces[func]
@@ -107,7 +110,7 @@ def add_trace_func(func):
 
     module = inspect.getmodule(func)
 
-    if threads.is_func_active(func):
+    if _is_func_active(func):
         raise Exception("Can't instrument an active function")
 
     if func in active_traces:
