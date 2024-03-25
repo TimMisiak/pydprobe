@@ -63,7 +63,7 @@ def _get_func(module_name, func_name):
 def get_all_traces():
     ret = []
     for func in dict(active_traces):
-        ret.append(modules.get_function_name(func))
+        ret.append(modules.get_full_name(func))
     return ret
 
 def remove_all_traces():
@@ -77,12 +77,13 @@ def _remove_trace_deferred(func):
 
 def remove_trace_func(func):
     global active_traces
+    if func not in active_traces:
+        return False
     if not threads.is_func_active(func):
         orig_code = active_traces[func]
         func.__code__ = orig_code
         del active_traces[func]
-        return True
-    return False
+    return True
 
 # Returns True if the trace was removed, or False if the trace was not yet removed and will be removed in a deferred way
 def remove_trace(module_name, func_name):

@@ -9,7 +9,7 @@ def get_module_by_name(module_name: str):
     return module
 
 
-def get_function_name(func: callable):
-    mod_name = inspect.getmodule(func).__name__
-    func_name = func.__name__
-    return f"{mod_name}.{func_name}"
+def get_full_name(obj):
+    mod_name = inspect.getmodule(obj).__name__
+    obj_name = obj.__name__
+    return f"{mod_name}.{obj_name}"

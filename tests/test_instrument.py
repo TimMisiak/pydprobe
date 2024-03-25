@@ -22,14 +22,14 @@ def test_instrumentation():
     global trace_list
     trace_list = []
     pydprobe.set_trace_callback(trace_callback)
-    pydprobe.add_trace("tests.test_basics", "bar")
-    pydprobe.add_trace("tests.test_basics", "baz")
+    pydprobe.add_trace("tests.test_instrument", "bar")
+    pydprobe.add_trace("tests.test_instrument", "baz")
     bar(1, 2, n2="val")
     assert trace_list == ["OUTPUT: bar(a = 1, b = 2, n1 = 'asdf', n2 = 'val')", 'OUTPUT: baz(a = 2, b = 1)']
-    assert set(pydprobe.get_all_traces()) == {"tests.test_basics.bar", "tests.test_basics.baz"}
+    assert set(pydprobe.get_all_traces()) == {"tests.test_instrument.bar", "tests.test_instrument.baz"}
     
-    pydprobe.remove_trace("tests.test_basics", "baz")
-    assert set(pydprobe.get_all_traces()) == {"tests.test_basics.bar"}
+    pydprobe.remove_trace("tests.test_instrument", "baz")
+    assert set(pydprobe.get_all_traces()) == {"tests.test_instrument.bar"}
     trace_list = []
     bar(1, 2, n2="val")
     assert trace_list == ["OUTPUT: bar(a = 1, b = 2, n1 = 'asdf', n2 = 'val')"]
@@ -48,7 +48,7 @@ def self_mod():
     global self_mod_init
     if not self_mod_init:
         self_mod_init = True
-        pydprobe.add_trace("tests.test_basics", "self_mod")
+        pydprobe.add_trace("tests.test_instrument", "self_mod")
         self_mod()
 
 
@@ -73,9 +73,10 @@ async def test_async():
     task = asyncio.create_task(async_sleep_func())
     await asyncio.sleep(.2)
     pydprobe.set_trace_callback(trace_callback)
-    pydprobe.add_trace("tests.test_basics", "async_sleep_func")
+    pydprobe.add_trace("tests.test_instrument", "async_sleep_func")
     task2 = asyncio.create_task(async_sleep_func())
     ret = await task
     assert ret == 2
     await task2
     assert trace_list == ['OUTPUT: async_sleep_func()']
+    pydprobe.remove_all_traces()
