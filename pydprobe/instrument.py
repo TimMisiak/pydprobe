@@ -1,18 +1,20 @@
 import inspect
-from typing import Callable
+from typing import Callable, Any
 import types
 import sys
 import platform
 from . import threads
+import threading
+import time
 
 
-def default_trace_callback(func_name: str, args: dict):
+def default_trace_callback(func, func_name: str, args: dict):
     arg_str = [f"{name} = {repr(value)}" for name, value in args.items()]
     print(f"TRACE: {func_name}({', '.join(arg_str)})")
 
 _trace_callback = default_trace_callback
 
-def set_trace_callback(callback: Callable[[str, dict], None]):
+def set_trace_callback(callback: Callable[[Any, str, dict], None]):
     global _trace_callback
     _trace_callback = callback
 
@@ -43,7 +45,7 @@ def __instrument_pre_call():
         arg_dict[name] = value
     if _trace_callback:
         try:
-            _trace_callback(func_name, arg_dict)
+            _trace_callback(caller_func, func_name, arg_dict)
         except:
             pass
 
@@ -51,7 +53,47 @@ def __instrument_pre_call():
 def preamble():
     __instrument_pre_call()
 
+active_traces = dict()
+
+def _get_func(module_name, func_name):
+    if sys.modules["__main__"].__spec__.name == module_name:
+        module = sys.modules["__main__"]
+    else:
+        module = sys.modules[module_name]
+    func = getattr(module, func_name)
+    return func
+
+def remove_all_traces():
+    for func in dict(active_traces):
+        if not remove_trace_func(func):
+            threading.Thread(target=_remove_trace_deferred, args=(func,), daemon=True).start()
+
+def _remove_trace_deferred(func):
+    while not remove_trace_func(func):
+        time.sleep(0.1)
+
+def remove_trace_func(func):
+    global active_traces
+    if not threads.is_func_active(func):
+        orig_code = active_traces[func]
+        func.__code__ = orig_code
+        del active_traces[func]
+        return True
+    return False
+
+# Returns True if the trace was removed, or False if the trace was not yet removed and will be removed in a deferred way
+def remove_trace(module_name, func_name):
+    func = _get_func(module_name, func_name)
+    if not remove_trace_func(func):
+        threading.Thread(target=_remove_trace_deferred, args=(func,), daemon=True).start()
+        return True
+    return False
+
 def add_trace(module_name, func_name):
+    add_trace_func(_get_func(module_name, func_name))
+
+def add_trace_func(func):
+    global active_traces
     pyver = platform.python_version_tuple()
     # Old python uses strings in the tuple
     pyver = tuple(int(number) for number in pyver)
@@ -59,15 +101,13 @@ def add_trace(module_name, func_name):
     if pyver > (3, 12, 1):
         raise Exception("Current python version is untested. Highest tested is 3.12.1")
 
-    if sys.modules["__main__"].__spec__.name == module_name:
-        module = sys.modules["__main__"]
-    else:
-        module = sys.modules[module_name]
-    func = getattr(module, func_name)
+    module = inspect.getmodule(func)
 
     if threads.is_func_active(func):
         raise Exception("Can't instrument an active function")
 
+    if func in active_traces:
+        raise Exception("Function is already being traced")
 
     setattr(module, "__instrument_pre_call", __instrument_pre_call)
     orig = func.__code__
@@ -180,3 +220,4 @@ def add_trace(module_name, func_name):
             orig.co_cellvars
         )
     func.__code__ = new_code
+    active_traces[func] = orig

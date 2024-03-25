@@ -13,7 +13,7 @@ def bar(a, b, n1 = "asdf", n2 = "fdsa"):
 
 trace_list = []
 
-def trace_callback(func_name: str, args: dict):
+def trace_callback(func, func_name: str, args: dict):
     global trace_list
     arg_str = [f"{name} = {repr(value)}" for name, value in args.items()]
     trace_list.append(f"OUTPUT: {func_name}({', '.join(arg_str)})")
@@ -26,6 +26,17 @@ def test_instrumentation():
     pydprobe.add_trace("tests.test_basics", "baz")
     bar(1, 2, n2="val")
     assert trace_list == ["OUTPUT: bar(a = 1, b = 2, n1 = 'asdf', n2 = 'val')", 'OUTPUT: baz(a = 2, b = 1)']
+    
+    pydprobe.remove_trace("tests.test_basics", "baz")
+    trace_list = []
+    bar(1, 2, n2="val")
+    assert trace_list == ["OUTPUT: bar(a = 1, b = 2, n1 = 'asdf', n2 = 'val')"]
+
+    pydprobe.remove_all_traces()
+    trace_list = []
+    bar(1, 2, n2="val")
+    assert trace_list == []
+    
 
 
 self_mod_init = False
@@ -47,9 +58,9 @@ def test_self_mod():
 
 
 async def async_sleep_func():
-    await asyncio.sleep(1)
-    await asyncio.sleep(1)
-    await asyncio.sleep(1)
+    await asyncio.sleep(.2)
+    await asyncio.sleep(.2)
+    await asyncio.sleep(.2)
     return 2
 
 @pytest.mark.asyncio
@@ -57,7 +68,7 @@ async def test_async():
     global trace_list
     trace_list = []
     task = asyncio.create_task(async_sleep_func())
-    await asyncio.sleep(1)
+    await asyncio.sleep(.2)
     pydprobe.set_trace_callback(trace_callback)
     pydprobe.add_trace("tests.test_basics", "async_sleep_func")
     task2 = asyncio.create_task(async_sleep_func())
