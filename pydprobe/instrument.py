@@ -108,6 +108,9 @@ def add_trace_func(func):
     if pyver > (3, 12, 1):
         raise Exception("Current python version is untested. Highest tested is 3.12.1")
 
+    while getattr(func, "__wrapped__", None):
+        func = getattr(func, "__wrapped__")
+
     module = inspect.getmodule(func)
 
     if _is_func_active(func):

@@ -77,3 +77,20 @@ async def test_async():
         pydprobe.add_trace("tests.test_instrument", "async_sleep_func")
     await task
     pydprobe.remove_all_traces()
+
+
+from . import util
+
+@util.my_wrapper
+def wrapped_func():
+    print("wrapped_func")
+
+def test_wrapped():
+    global trace_list
+    trace_list = []
+    pydprobe.set_trace_callback(trace_callback)
+    pydprobe.add_trace("tests.test_instrument", "wrapped_func")
+    trace_list = []
+    wrapped_func()
+    assert trace_list == ["OUTPUT: wrapped_func()"]
+    pydprobe.remove_all_traces()
