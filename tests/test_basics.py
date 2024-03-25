@@ -26,13 +26,16 @@ def test_instrumentation():
     pydprobe.add_trace("tests.test_basics", "baz")
     bar(1, 2, n2="val")
     assert trace_list == ["OUTPUT: bar(a = 1, b = 2, n1 = 'asdf', n2 = 'val')", 'OUTPUT: baz(a = 2, b = 1)']
+    assert set(pydprobe.get_all_traces()) == {"tests.test_basics.bar", "tests.test_basics.baz"}
     
     pydprobe.remove_trace("tests.test_basics", "baz")
+    assert set(pydprobe.get_all_traces()) == {"tests.test_basics.bar"}
     trace_list = []
     bar(1, 2, n2="val")
     assert trace_list == ["OUTPUT: bar(a = 1, b = 2, n1 = 'asdf', n2 = 'val')"]
-
+    
     pydprobe.remove_all_traces()
+    assert set(pydprobe.get_all_traces()) == set()
     trace_list = []
     bar(1, 2, n2="val")
     assert trace_list == []

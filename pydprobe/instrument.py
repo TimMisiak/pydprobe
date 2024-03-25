@@ -63,6 +63,14 @@ def _get_func(module_name, func_name):
     func = getattr(module, func_name)
     return func
 
+def get_all_traces():
+    ret = []
+    for func in dict(active_traces):
+        mod_name = inspect.getmodule(func).__name__
+        func_name = func.__name__
+        ret.append(f"{mod_name}.{func_name}")
+    return ret
+
 def remove_all_traces():
     for func in dict(active_traces):
         if not remove_trace_func(func):

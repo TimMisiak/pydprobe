@@ -1,1 +1,1 @@
-from .instrument import set_trace_callback, add_trace, add_trace_func, remove_all_traces, remove_trace, remove_trace_func
+from .instrument import set_trace_callback, add_trace, add_trace_func, remove_all_traces, remove_trace, remove_trace_func, get_all_traces
