@@ -5,20 +5,20 @@ import sys
 
 def recursive_eval(obj, parts, parent_name):
     if parts == []:
-        return [(parent_name, obj)]
+        return {parent_name: obj}
     part = parts[0]
     children = [x for x in obj.__dict__.keys() if fnmatch.fnmatch(x, part)]
-    ret = []
+    ret = dict()
     for child_name in children:
         full_name = f"{parent_name}.{child_name}"
         child_obj = getattr(obj, child_name)
-        ret.extend(recursive_eval(child_obj, parts[1:], full_name))
+        ret.update(recursive_eval(child_obj, parts[1:], full_name))
     return ret
 
 def eval_exp(exp: str):
     parts = exp.split('.')
     # First try to find an explicit module match
-    ret = set()
+    ret = dict()
     found_module = False
     for i in range(1, len(parts)):
         mod_parts = parts[:i]
@@ -26,13 +26,13 @@ def eval_exp(exp: str):
         module = modules.get_module_by_name(mod_name)
         if module:
             found_module = True
-            ret = ret.union(recursive_eval(module, parts[i:], mod_name))
+            ret.update(recursive_eval(module, parts[i:], mod_name))
     # If we don't find a module match, try to evaluate this against all modules in the main package. Potentially slow? Maybe we can put some filter to make sure we're not trying to eval
     # stuff in imported packages
     if not found_module:
         for mod_name, mod in sys.modules.items():
-            ret = ret.union(recursive_eval(mod, parts, mod_name))
-    return list(ret)
+            ret.update(recursive_eval(mod, parts, mod_name))
+    return list(ret.items())
 
 def run_trace(cmd: str):
     vals = eval_exp(cmd)
